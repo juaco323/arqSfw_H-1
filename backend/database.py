@@ -13,7 +13,7 @@ DB_USER = os.getenv("DB_USER", "tracker")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "tracker_secret")
 DB_NAME = os.getenv("DB_NAME", "package_tracking")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

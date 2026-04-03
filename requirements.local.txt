@@ -1,0 +1,5 @@
+-r backend/requirements.txt
+-r services/usuario-service/requirements.txt
+-r services/package-service/requirements.txt
+-r services/tracking-service/requirements.txt
+-r services/notification-service/requirements.txt

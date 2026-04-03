@@ -1,67 +1,131 @@
-# Sistema de Tracking de Paquetes (monolito de práctica)
+# Sistema de Tracking de Paquetes
 
-API monolítica **funcional** pero **mal diseñada a propósito**, para cursos de arquitectura, refactor y evolución hacia microservicios.
+Repositorio academico para evolucion de arquitectura desde un monolito hacia una solucion de microservicios con observabilidad.
 
-## Estructura del repositorio
+## 1) Estado actual del proyecto
 
-- `backend/` — FastAPI, SQLAlchemy, Docker propio (`Dockerfile`), semilla y esquema SQL de referencia.
-- `frontend/` — Vue 3 + Vite (UI de ejemplo, también con malas prácticas a propósito).
-- `docker-compose.yml` — en la raíz: levanta **postgres**, **backend** y **frontend**.
+El repositorio mantiene dos enfoques:
 
-## Requisitos
+- Monolito de practica (legado): implementado en `backend/` para analisis AS-IS y comparacion.
+- Arquitectura de microservicios (TO-BE): implementada y operativa con gateway, servicios independientes y base de datos por dominio.
 
-- Docker y Docker Compose
+## 2) Arquitectura de microservicios implementada
 
-## Ejecutar todo el stack
+Servicios y responsabilidades:
+
+- `usuario-service`: creacion y consulta de usuarios.
+- `package-service`: registro de paquetes y orquestacion inicial de tracking.
+- `tracking-service`: historial de eventos y actualizacion de estado.
+- `notification-service`: consumo de eventos y notificaciones asincronas basicas.
+- `api-gateway` (Nginx): punto unico de entrada para frontend y clientes.
+
+Persistencia por servicio:
+
+- `usuario-db` (PostgreSQL): datos de usuarios.
+- `package-db` (PostgreSQL): datos de paquetes.
+- `tracking-db` (PostgreSQL): eventos de tracking.
+
+Infraestructura complementaria:
+
+- Redis (Pub/Sub) para eventos entre servicios.
+- Prometheus para scraping de metricas.
+- Grafana para visualizacion.
+- Postgres Exporter para metricas de base de datos.
+
+## 3) Funcionalidades nuevas implementadas
+
+Implementadas sobre la arquitectura de microservicios:
+
+- Separacion de dominios en servicios independientes.
+- Base de datos dedicada por microservicio (aislamiento de datos).
+- API Gateway con rutas unificadas para compatibilidad funcional.
+- Swagger por microservicio (`/docs` en puertos individuales).
+- Flujo E2E distribuido:
+	- Crear usuario.
+	- Crear paquete para usuario.
+	- Inicializar tracking en servicio de tracking.
+	- Actualizar estado y registrar historial.
+- Publicacion de eventos en Redis (`tracking_events`).
+- Servicio de notificaciones suscrito a eventos.
+- Endpoints de salud y metricas por servicio (`/health`, `/metrics`).
+- CORS habilitado en gateway para frontend en distinto origen.
+
+## 4) Endpoints de negocio expuestos por gateway
+
+Base URL: `http://localhost:8000`
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| POST | `/createUser` | Crea usuario (`username`, `email`) |
+| GET | `/getUsers` | Lista usuarios |
+| POST | `/createPackage` | Crea paquete (`user_id`, `package_title`, `city`, `location`) |
+| GET | `/getAllPackages` | Lista paquetes con estado actual |
+| POST | `/updateStatus` | Actualiza estado de tracking |
+| GET | `/getTracking/{tracking_code}` | Retorna historial + estado actual |
+| GET | `/health` | Salud del sistema (gateway -> usuario-service) |
+| GET | `/metrics` | Metricas expuestas por servicio de usuarios |
+
+Estados validos de tracking:
+
+- `CREATED`
+- `IN_TRANSIT`
+- `OUT_FOR_DELIVERY`
+- `DELIVERED`
+- `EXCEPTION`
+
+## 5) Swagger / OpenAPI
+
+Swagger por microservicio:
+
+- `http://localhost:8001/docs` -> usuario-service
+- `http://localhost:8002/docs` -> package-service
+- `http://localhost:8003/docs` -> tracking-service
+- `http://localhost:8004/docs` -> notification-service
+
+OpenAPI JSON:
+
+- `http://localhost:8001/openapi.json`
+- `http://localhost:8002/openapi.json`
+- `http://localhost:8003/openapi.json`
+- `http://localhost:8004/openapi.json`
+
+## 6) Ejecucion del proyecto
+
+Requisitos:
+
+- Docker
+- Docker Compose
+
+Levantar stack completo:
 
 ```bash
 docker compose up --build
 ```
 
-- API: `http://localhost:8000` (documentación: `/docs`).
-- UI (Nginx): `http://localhost:8080`.
+Accesos principales:
 
-Desarrollo del front sin Docker: `cd frontend && npm install && npm run dev` → `http://localhost:5173`. El backend expone CORS abierto para URLs absolutas desde el navegador durante el curso.
+- Frontend: `http://localhost:8080`
+- API Gateway: `http://localhost:8000`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
 
-Desarrollo del backend sin Docker: `cd backend`, entorno virtual, `pip install -r requirements.txt`, variables `DB_*` apuntando a tu PostgreSQL, y `uvicorn main:app --reload`.
+## 7) Entorno local Python (opcional)
 
-## Endpoints (nombres no REST a propósito)
+Para ejecutar servicios fuera de Docker:
 
-| Método | Ruta | Descripción breve |
-|--------|------|-------------------|
-| POST | `/createUser` | Crear usuario (`username`, `email`) |
-| GET | `/getUsers` | Listar usuarios |
-| POST | `/createPackage` | Crear envío (`user_id`, `package_title`, opcionales `city`, `location`) |
-| GET | `/getAllPackages` | Listar último estado por `tracking_code` |
-| POST | `/updateStatus` | Nuevo evento (`tracking_code`, `new_status`, opcionales `location`, `note`) |
-| GET | `/getTracking/{tracking_code}` | Historial y estado actual |
-| GET | `/health` | Salud mínima |
-| GET | `/metrics` | `total_packages`, `total_events`, `average_processing_time` (valor simulado), timestamps |
-
-Estados válidos para `updateStatus`: `CREATED`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `EXCEPTION`.
-
-El archivo `backend/schema_mal_diseno.sql` describe en SQL el mismo esquema denormalizado (solo referencia; la app usa `Base.metadata.create_all`).
-
-## Datos de prueba
-
-Al levantar con bases vacías, el arranque intenta ejecutar la semilla (`backend/seed.py`): 3 usuarios y paquetes `TRK-SEED-1001`, `TRK-SEED-2002`, `TRK-SEED-3003`.
-
-Semilla manual:
-
-```bash
-docker compose exec backend python seed.py
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.local.txt
 ```
 
-## Variables de entorno (backend)
+`requirements.local.txt` centraliza dependencias de `backend/` y `services/`.
 
-| Variable | Ejemplo | Uso |
-|----------|---------|-----|
-| `DB_HOST` | `postgres` | Host PostgreSQL |
-| `DB_PORT` | `5432` | Puerto |
-| `DB_USER` | `tracker` | Usuario |
-| `DB_PASSWORD` | `tracker_secret` | Contraseña |
-| `DB_NAME` | `package_tracking` | Base de datos |
+## 8) Documentacion adicional
 
-## Advertencia pedagógica
+- Informe tecnico de migracion: `docs/informe_hito1.md`
+- Implementacion de microservicios (resumen tecnico): `docs/implementacion_microservicios.md`
 
-Este repositorio incorpora de forma intencional: acoplamiento alto, tabla denormalizada, duplicación de lógica, rutas inconsistentes, manejo de errores pobre y observabilidad débil. **No** usar como referencia de buenas prácticas.
+## 9) Nota academica
+
+El monolito legado se conserva con fines de analisis de deuda tecnica y comparacion AS-IS vs TO-BE.

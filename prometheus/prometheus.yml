@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: usuario-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["usuario-service:8000"]
+
+  - job_name: package-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["package-service:8000"]
+
+  - job_name: tracking-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["tracking-service:8000"]
+
+  - job_name: notification-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["notification-service:8000"]
+
+  - job_name: postgres-exporter
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
