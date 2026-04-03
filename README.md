@@ -32,6 +32,11 @@ Infraestructura complementaria:
 - Grafana para visualizacion.
 - Postgres Exporter para metricas de base de datos.
 
+Segmentacion de red implementada:
+
+- Red publica: solo `frontend` y `api-gateway` expuestos al exterior.
+- Red privada (interna): microservicios, bases de datos, Redis, Prometheus y Grafana.
+
 ## 3) Funcionalidades nuevas implementadas
 
 Implementadas sobre la arquitectura de microservicios:
@@ -39,7 +44,7 @@ Implementadas sobre la arquitectura de microservicios:
 - Separacion de dominios en servicios independientes.
 - Base de datos dedicada por microservicio (aislamiento de datos).
 - API Gateway con rutas unificadas para compatibilidad funcional.
-- Swagger por microservicio (`/docs` en puertos individuales).
+- Politica de exposicion externa restringida (solo frontend y gateway).
 - Flujo E2E distribuido:
 	- Crear usuario.
 	- Crear paquete para usuario.
@@ -75,19 +80,16 @@ Estados validos de tracking:
 
 ## 5) Swagger / OpenAPI
 
-Swagger por microservicio:
+Por politica de seguridad de red, los microservicios no publican puertos al host.
 
-- `http://localhost:8001/docs` -> usuario-service
-- `http://localhost:8002/docs` -> package-service
-- `http://localhost:8003/docs` -> tracking-service
-- `http://localhost:8004/docs` -> notification-service
+Para revisar OpenAPI desde la red interna del stack:
 
-OpenAPI JSON:
-
-- `http://localhost:8001/openapi.json`
-- `http://localhost:8002/openapi.json`
-- `http://localhost:8003/openapi.json`
-- `http://localhost:8004/openapi.json`
+```bash
+docker compose exec api-gateway wget -qO- http://usuario-service:8000/openapi.json
+docker compose exec api-gateway wget -qO- http://package-service:8000/openapi.json
+docker compose exec api-gateway wget -qO- http://tracking-service:8000/openapi.json
+docker compose exec api-gateway wget -qO- http://notification-service:8000/openapi.json
+```
 
 ## 6) Ejecucion del proyecto
 
@@ -106,8 +108,8 @@ Accesos principales:
 
 - Frontend: `http://localhost:8080`
 - API Gateway: `http://localhost:8000`
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000`
+
+Observabilidad (red privada): Prometheus y Grafana quedan internos por diseno de seguridad.
 
 ## 7) Entorno local Python (opcional)
 
