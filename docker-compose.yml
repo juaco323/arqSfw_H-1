@@ -12,8 +12,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - private_net
 
   package-db:
     image: postgres:15-alpine
@@ -28,8 +26,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - private_net
 
   tracking-db:
     image: postgres:15-alpine
@@ -44,16 +40,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - private_net
 
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    networks:
-      - private_net
 
   usuario-service:
     build:
@@ -68,8 +60,8 @@ services:
     depends_on:
       usuario-db:
         condition: service_healthy
-    networks:
-      - private_net
+    ports:
+      - "8001:8000"
 
   package-service:
     build:
@@ -93,8 +85,8 @@ services:
         condition: service_started
       redis:
         condition: service_started
-    networks:
-      - private_net
+    ports:
+      - "8002:8000"
 
   tracking-service:
     build:
@@ -113,8 +105,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    networks:
-      - private_net
+    ports:
+      - "8003:8000"
 
   notification-service:
     build:
@@ -125,8 +117,8 @@ services:
     depends_on:
       redis:
         condition: service_started
-    networks:
-      - private_net
+    ports:
+      - "8004:8000"
 
   api-gateway:
     build:
@@ -138,9 +130,6 @@ services:
       - usuario-service
       - package-service
       - tracking-service
-    networks:
-      - public_net
-      - private_net
 
   frontend:
     build:
@@ -150,8 +139,6 @@ services:
       - "8080:80"
     depends_on:
       - api-gateway
-    networks:
-      - public_net
 
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
@@ -160,11 +147,11 @@ services:
     depends_on:
       tracking-db:
         condition: service_healthy
-    networks:
-      - private_net
 
   prometheus:
     image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
@@ -172,18 +159,16 @@ services:
       - package-service
       - tracking-service
       - notification-service
-    networks:
-      - private_net
 
   grafana:
     image: grafana/grafana:11.0.0
+    ports:
+      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
-    networks:
-      - private_net
 
 volumes:
   usuario_db_data:
@@ -191,10 +176,3 @@ volumes:
   tracking_db_data:
   redis_data:
   grafana_data:
-
-networks:
-  public_net:
-    driver: bridge
-  private_net:
-    driver: bridge
-    internal: true
