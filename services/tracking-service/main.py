@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, generate_latest
+from starlette.requests import Request
 
 from database import Base, SessionLocal, engine
 from models import TrackingEvent
@@ -36,6 +37,11 @@ REQUEST_COUNT = Counter(
 REQUEST_LATENCY = Histogram(
     "tracking_request_latency_seconds", "Request latency in tracking-service", ["endpoint", "method"]
 )
+HTTP_RESPONSES = Counter(
+    "tracking_http_responses_total",
+    "Total HTTP responses in tracking-service",
+    ["endpoint", "method", "status_code"],
+)
 
 
 class InitTrackingRequest(BaseModel):
@@ -57,6 +63,19 @@ class UpdateStatusRequest(BaseModel):
 @app.on_event("startup")
 def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    response = await call_next(request)
+    endpoint = request.url.path
+    method = request.method
+    HTTP_RESPONSES.labels(
+        endpoint=endpoint,
+        method=method,
+        status_code=str(response.status_code),
+    ).inc()
+    return response
 
 
 @app.post("/internal/initTracking")
