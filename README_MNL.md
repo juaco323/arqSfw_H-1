@@ -42,6 +42,36 @@ Desarrollo del front sin Docker: `cd frontend && npm install && npm run dev` -> 
 
 Desarrollo del backend sin Docker: `cd backend`, entorno virtual, `pip install -r requirements.txt`, variables `DB_*` apuntando a tu PostgreSQL, y `uvicorn main:app --reload`.
 
+## Carga de trabajo y comparacion con microservicios
+
+Aunque este README describe el monolito, el repositorio incluye scripts para comparar bajo carga contra la version de microservicios.
+
+Si PowerShell bloquea scripts en tu sesion:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
+Ejecutar carga sobre monolito solamente (ajusta URL/puerto segun tu despliegue):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\generate-observability-load.ps1 -BaseUrl http://localhost:8000 -Users 120 -PackagesPerUser 25 -ReadCycles 1500 -DelayMs 2
+```
+
+Ejecutar comparacion en paralelo microservicios vs monolito:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run-observability-load.ps1 -Workers 4 -MicroUrl http://localhost:8000 -CompareWithMonolith -MonolithUrl http://localhost:8005
+```
+
+Durante la corrida, observar en Grafana/Prometheus:
+
+- p95 de latencia
+- throughput por servicio
+- tasa de errores
+- CPU/memoria por contenedor
+- red del host
+
 ## Endpoints (nombres no REST a proposito)
 
 | Metodo | Ruta | Descripcion breve |

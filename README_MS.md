@@ -109,7 +109,41 @@ Accesos principales:
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000`
 
-## 7) Entorno local Python (opcional)
+## 7) Carga de trabajo para observabilidad
+
+Este repositorio incluye scripts para generar carga y medir el comportamiento del sistema en Grafana/Prometheus.
+
+Si PowerShell bloquea scripts en tu sesion:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
+Carga simple contra microservicios:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\generate-observability-load.ps1 -BaseUrl http://localhost:8000 -Users 120 -PackagesPerUser 25 -ReadCycles 1500 -DelayMs 2
+```
+
+Carga paralela (multiples workers):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run-observability-load.ps1 -Workers 4 -MicroUrl http://localhost:8000 -Users 120 -Packages 25 -Reads 1500 -Delay 2
+```
+
+Comparacion opcional contra monolito:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run-observability-load.ps1 -Workers 4 -MicroUrl http://localhost:8000 -CompareWithMonolith -MonolithUrl http://localhost:8005
+```
+
+Dashboard esperado en Grafana:
+
+- `Observabilidad Microservicios` (provisionado desde `grafana/provisioning/dashboards/json/observabilidad-microservicios.json`).
+- URL Grafana: `http://localhost:3000`
+- URL Prometheus: `http://localhost:9090`
+
+## 8) Entorno local Python (opcional)
 
 Para ejecutar servicios fuera de Docker:
 
@@ -121,11 +155,11 @@ pip install -r requirements.local.txt
 
 `requirements.local.txt` centraliza dependencias de `backend/` y `services/`.
 
-## 8) Documentacion adicional
+## 9) Documentacion adicional
 
 - Informe tecnico de migracion: `docs/informe_hito1.md`
 - Implementacion de microservicios (resumen tecnico): `docs/implementacion_microservicios.md`
 
-## 9) Nota academica
+## 10) Nota academica
 
 El monolito legado se conserva con fines de analisis de deuda tecnica y comparacion AS-IS vs TO-BE.

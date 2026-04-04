@@ -30,3 +30,12 @@ docker run -p 8080:80 tracking-fe
 ```
 
 El navegador seguirá llamando al API en `http://localhost:8000` (CORS debe estar habilitado en el backend).
+
+## Observabilidad y carga
+
+Para generar carga sobre el sistema y medir consumo/latencia con Prometheus y Grafana, usa los scripts de la raiz del repositorio:
+
+- `generate-observability-load.ps1`
+- `run-observability-load.ps1`
+
+La guia completa de ejecucion y comparacion esta en `README.md` y `docs/implementacion_microservicios.md`.

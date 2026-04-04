@@ -1,0 +1,181 @@
+{
+  "id": null,
+  "uid": "obs-microservices",
+  "title": "Observabilidad Microservicios",
+  "tags": ["prometheus", "microservices"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Latencia p95 Usuario",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(usuario_request_latency_seconds_bucket[5m])) by (le, endpoint, method))",
+          "legendFormat": "{{endpoint}} {{method}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Latencia p95 Package",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(package_request_latency_seconds_bucket[5m])) by (le, endpoint, method))",
+          "legendFormat": "{{endpoint}} {{method}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Latencia p95 Tracking",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(tracking_request_latency_seconds_bucket[5m])) by (le, endpoint, method))",
+          "legendFormat": "{{endpoint}} {{method}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Throughput por Servicio (RPS)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(usuario_requests_total[5m]))",
+          "legendFormat": "usuario"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(package_requests_total[5m]))",
+          "legendFormat": "package"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(tracking_requests_total[5m]))",
+          "legendFormat": "tracking"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Tasa de Errores Usuario (%)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(rate(usuario_http_responses_total{status_code=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(usuario_http_responses_total[5m])), 1e-9)",
+          "legendFormat": "usuario"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Tasa de Errores Package (%)",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(rate(package_http_responses_total{status_code=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(package_http_responses_total[5m])), 1e-9)",
+          "legendFormat": "package"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Tasa de Errores Tracking (%)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(rate(tracking_http_responses_total{status_code=~\"4..|5..\"}[5m])) / clamp_min(sum(rate(tracking_http_responses_total[5m])), 1e-9)",
+          "legendFormat": "tracking"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "CPU por Contenedor/CGroup (cores)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "cores" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{cpu=\"total\", id!=\"/\"}[5m])) by (id)",
+          "legendFormat": "{{id}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Memoria por Contenedor/CGroup",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(container_memory_working_set_bytes{id!=\"/\"}) by (id)",
+          "legendFormat": "{{id}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Red TX/RX del Host (interfaces)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_network_receive_bytes_total{id=\"/\"}[5m])) by (interface)",
+          "legendFormat": "RX {{interface}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(container_network_transmit_bytes_total{id=\"/\"}[5m])) by (interface)",
+          "legendFormat": "TX {{interface}}"
+        }
+      ]
+    }
+  ]
+}
